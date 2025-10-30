@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Model Viewer — Test</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+  <style>
+    :root {
+      --bg: #111315;
+      --card: #0f1720;
+      --accent: #06b6d4;
+      color-scheme: dark;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    body {
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, var(--bg), #0b0c0d);
+      padding: 24px;
+    }
+    .wrapper {
+      max-width: 1100px;
+      width: 100%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+    header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 1.05rem;
+      margin: 0;
+    }
+    .viewer-area {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 16px;
+    }
+    model-viewer {
+      width: 100%;
+      height: 620px;
+      border-radius: 10px;
+      background: transparent;
+    }
+    .controls {
+      background: rgba(255,255,255,0.02);
+      padding: 12px;
+      border-radius: 8px;
+      height: 620px;
+      overflow: auto;
+    }
+    label { display: block; margin: 8px 0; font-size: 0.9rem; }
+    input[type="range"] { width: 100%; }
+    button {
+      background: var(--accent);
+      color: rgb(255, 255, 255);
+      border: none;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    small { opacity: 0.8; }
+    .muted { color: #9ca3af; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <div>
+        <h1>&lt;model-viewer&gt;</h1>
+        <small class="muted">Interactive 3D viewer with local file loading</small>
+      </div>
+    </header>
+
+    <main class="viewer-area">
+      <model-viewer id="mv"
+        src="shared-assets/models/ukrainian_bayraktar_tb2.glb"
+        alt="A 3D model of an astronaut"
+        poster="https://modelviewer.dev/assets/poster-720x405.png"
+        exposure="1"
+        camera-controls
+        auto-rotate
+        ar
+        shadow-intensity="0"
+        skybox-height="4m"
+        environment-image="shared-assets/environments/kiara_1_dawn_1k.hdr"
+        skybox-image="shared-assets/environments/whipple_creek_regional_park_04_4k.jpg"
+        style="background: linear-gradient(180deg, #0b1220, #061018);">
+      </model-viewer>
+
+      <aside class="controls">
+        <div id="mvStatus" role="status" style="margin-bottom:8px;color:#f88"></div>
+
+        <label>Model URL (GLB / GLTF)
+          <input id="modelUrl" type="url" placeholder="https://example.com/model.glb" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit">
+        </label>
+
+        <label>Load local file
+          <input id="fileInput" type="file" accept=".glb,.gltf" style="width:100%">
+        </label>
+
+        <label>Auto rotate
+          <input id="autoRotate" type="checkbox" checked>
+        </label>
+
+        <label>Camera controls
+          <input id="cameraControls" type="checkbox" checked>
+        </label>
+
+        <label>Exposure <small id="exposureVal">1</small>
+          <input id="exposure" type="range" min="0" max="3" step="0.01" value="1">
+        </label>
+
+        <label>Shadow intensity <small id="shadowVal">1</small>
+          <input id="shadow" type="range" min="0" max="2" step="0.01" value="1">
+        </label>
+
+        <label>Environment and Skybox (HDR)
+          <select id="envSelect" style="width:100%;padding:8px;border-radius:6px;background:transparent;color:inherit">
+            <option value="">(default)</option>
+            <option value="shared-assets/environments/venice_sunset_1k.hdr">Venice sunset</option>
+            <option value="shared-assets/environments/kiara_1_dawn_1k.hdr">Kiara dawn</option>
+            <option value="shared-assets/environments/studio_small_03_1k.hdr">Neutral studio</option>
+            <option value="shared-assets/environments/citrus_orchard_road_puresky_4k.hdr">Sky</option>
+            <option value="shared-assets/environments/climbing_gym_4k.jpg">Climbing Gym</option>
+            <option value="shared-assets/environments/whipple_creek_regional_park_04_4k.jpg">Forest</option>
+          </select>
+        </label>
+
+        <label>Background color
+          <input id="bgColor" type="color" value="#061018" style="width:100%">
+        </label>
+
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="applyUrl">Load URL</button>
+          <button id="reset">Reset</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const mv = document.getElementById('mv');
+    const mvStatus = document.getElementById('mvStatus');
+    const fileInput = document.getElementById('fileInput');
+    const modelUrl = document.getElementById('modelUrl');
+    const applyUrl = document.getElementById('applyUrl');
+    const resetBtn = document.getElementById('reset');
+    const autoRotate = document.getElementById('autoRotate');
+    const cameraControls = document.getElementById('cameraControls');
+    const exposure = document.getElementById('exposure');
+    const exposureVal = document.getElementById('exposureVal');
+    const shadow = document.getElementById('shadow');
+    const shadowVal = document.getElementById('shadowVal');
+    const envSelect = document.getElementById('envSelect');
+    const skyBoxSelect = document.getElementById('skyBoxSelect');
+    const bgColor = document.getElementById('bgColor');
+
+    function setEnvAndSkybox(value) {
+      if (value) {
+        mv.environmentImage = value;
+        mv.skyboxImage = value;
+      } else {
+        mv.removeAttribute('environment-image');
+        mv.removeAttribute('skybox-image');
+      }
+
+      // Keep both dropdowns in sync
+      envSelect.value = value;
+      skyBoxSelect.value = value;
+    }
+
+    // Load remote URL
+    applyUrl.addEventListener('click', () => {
+      const url = modelUrl.value.trim();
+      if (!url) return alert('Enter a model URL');
+      mv.src = url;
+      mvStatus.textContent = `Loading model from URL...`;
+    });
+
+    // Improved local file loading
+    fileInput.addEventListener('change', (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) {
+        console.warn('No file selected');
+        return;
+      }
+      const name = f.name || 'local-file';
+      console.log('Selected file:', name, f);
+      const ext = name.split('.').pop().toLowerCase();
+      if (ext === 'gltf') {
+        console.warn('.gltf may reference external files. Prefer .glb for local loading.');
+      }
+      const url = URL.createObjectURL(f);
+      mv.src = url;
+      modelUrl.value = name;
+      mvStatus.textContent = `Loading local model: ${name}`;
+
+      const cleanup = () => {
+        mv.removeEventListener('load', onLoad);
+        mv.removeEventListener('error', onError);
+        URL.revokeObjectURL(url);
+      };
+
+      const onLoad = () => {
+        console.log('Model loaded:', name);
+        mvStatus.textContent = `Loaded ${name}`;
+        cleanup();
+      };
+
+      const onError = (evt) => {
+        console.error('Model load error:', evt);
+        mvStatus.textContent = 'Failed to load model. See console for details.';
+        cleanup();
+      };
+
+      mv.addEventListener('load', onLoad, { once: true });
+      mv.addEventListener('error', onError, { once: true });
+    });
+
+    autoRotate.addEventListener('change', (e) => {
+      if (e.target.checked) mv.setAttribute('auto-rotate', '');
+      else mv.removeAttribute('auto-rotate');
+    });
+    cameraControls.addEventListener('change', (e) => {
+      if (e.target.checked) mv.setAttribute('camera-controls', '');
+      else mv.removeAttribute('camera-controls');
+    });
+
+    exposure.addEventListener('input', (e) => {
+      mv.exposure = e.target.value;
+      exposureVal.textContent = e.target.value;
+    });
+    shadow.addEventListener('input', (e) => {
+      mv.shadowIntensity = e.target.value;
+      shadowVal.textContent = e.target.value;
+    });
+
+    envSelect.addEventListener('change', e => setEnvAndSkybox(e.target.value));
+    skyBoxSelect.addEventListener('change', e => setEnvAndSkybox(e.target.value));
+
+    bgColor.addEventListener('input', (e) => {
+      mv.style.background = e.target.value;
+    });
+
+    resetBtn.addEventListener('click', () => {
+      mv.src = 'shared-assets/models/ukrainian_bayraktar_tb2.glb';
+      mv.poster = 'https://modelviewer.dev/assets/poster-720x405.png';
+      mv.exposure = 1;
+      mv.shadowIntensity = 1;
+      mv.setAttribute('camera-controls', '');
+      mv.setAttribute('auto-rotate', '');
+      setEnvAndSkybox('');
+      bgColor.value = '#061018';
+      mv.style.background = 'linear-gradient(180deg, #0b1220, #061018)';
+      mvStatus.textContent = 'Reset to default model.';
+    });
+
+    mv.addEventListener('load', () => mvStatus.textContent = 'Model loaded.');
+    mv.addEventListener('error', (e) => mvStatus.textContent = 'Error loading model. See console.');
+    mv.addEventListener('progress', (e) => {
+      if (e.detail && e.detail.total) {
+        const pct = (e.detail.loaded / e.detail.total * 100).toFixed(0);
+        mvStatus.textContent = `Loading ${pct}%`;
+      }
+    });
+  </script>
+</body>
+</html>
